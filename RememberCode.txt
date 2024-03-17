@@ -1,0 +1,60 @@
+import discord
+import random
+from discord.ext import commands
+
+bot = commands.Bot(command_prefix='!')
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name} ({bot.user.id})')
+    print('------')
+
+@bot.command(name='number')
+async def start_game(ctx):
+    await ctx.send("To start the game, type `!remember`")
+
+@bot.command(name='remember')
+async def remember_numbers(ctx):
+    numbers = [random.randint(1, 100) for _ in range(20)]
+    total = sum(numbers)
+    level = 1
+
+    await ctx.send(f"Level {level}: {', '.join(map(str, numbers))}")
+    
+    def check(msg):
+        return msg.author == ctx.author and msg.content.isdigit()
+
+    while level <= 20:
+        try:
+            response = await bot.wait_for('message', check=check, timeout=20.0)
+            if int(response.content) == total:
+                await ctx.send("Yep, you are right!")
+                level += 1
+                if level <= 20:
+                    numbers = [random.randint(1, 100) for _ in range(level)]
+                    total = sum(numbers)
+                    await ctx.send(f"Level {level}: {', '.join(map(str, numbers))}")
+            else:
+                await ctx.send("Nah, you are wrong. Play again? (yes/no)")
+                try:
+                    response = await bot.wait_for('message', check=lambda m: m.author == ctx.author, timeout=10.0)
+                    if response.content.lower() == 'yes':
+                        level = 1
+                        numbers = [random.randint(1, 100) for _ in range(level)]
+                        total = sum(numbers)
+                        await ctx.send(f"Level {level}: {', '.join(map(str, numbers))}")
+                    elif response.content.lower() == 'no':
+                        await ctx.send("Game over. Type `!number` to start a new game.")
+                        break
+                except asyncio.TimeoutError:
+                    await ctx.send("Timeout. Game over.")
+                    break
+        except asyncio.TimeoutError:
+            await ctx.send("Timeout. Game over.")
+            break
+
+@bot.command(name='help')
+async def help_command(ctx):
+    await ctx.send("To start the game, type `!number`. Then, type `!remember` to begin remembering the numbers.")
+
+bot.run('MTE5NTk1NTcyNjkxMzM4MDQwMw.Gvmq3L.eAmbmHTWkl71EIloMkevGD-Hr9NFfa1x9JZMug')

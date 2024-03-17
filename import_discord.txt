@@ -1,0 +1,41 @@
+import discord
+from discord.ext import commands
+import asyncio
+import random
+
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f"Logged in as {bot.user.name} ({bot.user.id})")
+
+@bot.command()
+async def start_memory_game(ctx):
+    initial_message = await ctx.send("Welcome to Number Memory! I will display a sequence of numbers, and you need to type them back.")
+    sequence = generate_sequence()
+    sequence_message = await ctx.send(f"Memorize the sequence: `{', '.join(map(str, sequence))}`")
+    await asyncio.sleep(5)
+    await sequence_message.delete(delay=2)
+    await ctx.send("Time's up! Now type the sequence back.")
+    
+    def check(message):
+        return message.author == ctx.author and message.content.isdigit()
+
+    try:
+        user_response = await bot.wait_for('message', timeout=15, check=check)
+        user_numbers = [int(num) for num in user_response.content]
+        
+        if user_numbers == sequence:
+            await ctx.send("Congratulations! You got it right.")
+        else:
+            await ctx.send(f"Oops! The correct sequence was: `{', '.join(map(str, sequence))}`.")
+    except asyncio.TimeoutError:
+        await ctx.send("Time's up! You didn't type the sequence in time.")
+
+def generate_sequence():
+    return [random.randint(1, 9) for _ in range(5)]
+
+bot.run('MTE5NTkxNjM0Mjk4NjAyNzA3OA.GQmUew.YiIx4F7vd8uO-Qh2qklrIzFb-Dv2DOCJMus38Y')
